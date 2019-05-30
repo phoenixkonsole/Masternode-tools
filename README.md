@@ -9,6 +9,7 @@ Check releases for my closed source automatic node multi-node creator that works
 - API support from the command line for node hosting services. run `node help` for a list of commands (IP configuration must be done manually)
 
 How to install:
+
 `wget https://github.com/lobomfz/Masternode-tools/releases/download/v1.0/node`
 
 `chmod +x node`
