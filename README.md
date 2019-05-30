@@ -7,6 +7,7 @@ Check releases for my closed source automatic node multi-node creator (Based on 
 - Creating multiple nodes of the same coin or from different coins on the same system, using ipv6 (Required for more than 1 node per coin)
 - Easiest usage possible extremely noob-friendly
 - API support from the command line for node hosting services. run `node help` for a list of commands (IP configuration must be done manually)
+- Run `node` to start guided tool.
 
 How to install:
 
