@@ -9,6 +9,8 @@ Check releases for my closed source automatic node multi-node creator (Based on 
 - API support from the command line for node hosting services. run `node help` for a list of commands (IP configuration must be done manually)
 - Run `node` to start guided tool.
 
+DO NOT DELETE NODES MANUALLY. USE DELETE OPTION!
+
 How to install:
 
 `wget https://github.com/lobomfz/Masternode-tools/releases/download/v1.0/node`
