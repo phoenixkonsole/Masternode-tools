@@ -10,5 +10,7 @@ Check releases for my closed source automatic node multi-node creator that works
 
 How to install:
 `wget https://github.com/lobomfz/Masternode-tools/releases/download/v1.0/node`
+
 `chmod +x node`
+
 `mv node /usr/local/bin`
