@@ -46,7 +46,7 @@ then
   ufw limit ssh/tcp
   ufw logging on
   echo "y" | ufw enable 
-  ufw allow 22123
+  ufw allow 8051
   echo 'export PATH=~/bin:$PATH' > ~/.bash_aliases
   source ~/.bashrc
   echo ""
@@ -67,7 +67,7 @@ face="$(lshw -C network | grep "logical name:" | sed -e 's/logical name:/logical
 IP4=$(curl -s4 api.ipify.org)
 version=$(curl https://raw.githubusercontent.com/lobomfz/Masternode-tools/master/current)
 link=$(curl https://raw.githubusercontent.com/lobomfz/Masternode-tools/master/download)
-PORT=22123
+PORT=8051
 RPCPORTT=22130
 gateway1=$(/sbin/route -A inet6 | grep -v ^fe80 | grep -v ^ff00 | grep -w "$face")
 gateway2=${gateway1:0:26}
