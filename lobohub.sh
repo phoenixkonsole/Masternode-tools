@@ -61,6 +61,7 @@ fi
 ## Constants
 
 IP4COUNT=$(find /root/.transcendence_* -maxdepth 0 -type d | wc -l)
+IP6COUNT=$(crontab -l -u root | wc -l)
 DELETED="$(cat /root/bin/deleted | wc -l)"
 ALIASES="$(find /root/.transcendence_* -maxdepth 0 -type d | cut -c22-)"
 face="$(lshw -C network | grep "logical name:" | sed -e 's/logical name:/logical name: /g' | awk '{print $3}' | head -n1)"
@@ -104,12 +105,23 @@ StartLimitBurst=5
 WantedBy=multi-user.target
 EOF
   systemctl daemon-reload
-  sleep 6
-  crontab -l > cron$ALIAS
-  echo "@reboot systemctl start transcendenced$ALIAS" >> cron$ALIAS
-  crontab cron$ALIAS
-  rm cron$ALIAS
+  sleep 2
+  echo "sleep 5" >> /root/bin/start_nodes.sh
+  echo "systemctl start transcendenced$ALIAS" >> /root/bin/start_nodes.sh
+  chmod +x /root/bin/start_nodes.sh
   systemctl start transcendenced$ALIAS.service
+}
+
+function configure_bashrc() {
+	echo "alias ${ALIAS}_status=\"transcendence-cli -datadir=/root/.transcendence_${ALIAS} masternode status\"" >> .bashrc
+	echo "alias ${ALIAS}_stop=\"systemctl stop transcendenced$ALIAS\"" >> .bashrc
+	echo "alias ${ALIAS}_start=\"systemctl start transcendenced$ALIAS\""  >> .bashrc
+	echo "alias ${ALIAS}_config=\"nano /root/.transcendence_${ALIAS}/transcendence.conf\""  >> .bashrc
+	echo "alias ${ALIAS}_getinfo=\"transcendence-cli -datadir=/root/.transcendence_${ALIAS} getinfo\"" >> .bashrc
+	echo "alias ${ALIAS}_getpeerinfo=\"transcendence-cli -datadir=/root/.transcendence_${ALIAS} getpeerinfo\"" >> .bashrc
+	echo "alias ${ALIAS}_resync=\"/root/bin/transcendenced_${ALIAS}.sh -resync\"" >> .bashrc
+	echo "alias ${ALIAS}_reindex=\"/root/bin/transcendenced_${ALIAS}.sh -reindex\"" >> .bashrc
+	echo "alias ${ALIAS}_restart=\"systemctl restart transcendenced$ALIAS\""  >> .bashrc
 }
 
 ## Check for wallet update
@@ -139,15 +151,27 @@ fi
 fi
 
 ## Start of Guided Script
-
+if [ -z $1 ]; then
 echo "1 - Create new nodes"
 echo "2 - Remove an existing node"
 echo "3 - List aliases"
-echo "4 - Check for node errors"
+echo "4 - Check node status"
 echo "5 - Compile wallet locally"
 echo "What would you like to do?"
 read DO
 echo ""
+else
+DO=$1
+ALIAS=$2
+ALIASD=$2
+PRIVKEY=$3
+fi
+
+if [ $DO = "help" ]
+then
+echo "Usage:"
+echo "./lobohub.sh Action Alias PrivateKey"
+fi
 
 ## List aliases
 
@@ -226,17 +250,8 @@ CURRENT="$(sed -n "${LOOP}p" temp2)"
 
 echo -e "${GREEN}${CURRENT}${NC}:"
 sh /root/bin/transcendence-cli_${CURRENT}.sh masternode status | grep "message"
-OFFSET="$(sh /root/bin/transcendence-cli_${CURRENT}.sh getinfo | grep "timeoffset")"
-OFF1=${OFFSET:(-2)}
-OFF=${OFF1:0:1}
-
-if [ $OFF = "1" ]
-then
-echo "$OFFSET" 
-fi
-
 done
-rm temp2
+
 
 fi
 
@@ -244,8 +259,10 @@ fi
 
 if [ $DO = "2" ]
 then
+if [ -z $1 ]; then
 echo "Input the alias of the node that you want to delete"
 read ALIASD
+fi
 
 echo ""
 echo -e "${GREEN}Deleting ${ALIASD}${NC}. Please wait."
@@ -257,12 +274,17 @@ systemctl disable transcendenced$ALIASD >/dev/null 2>&1
 rm /etc/systemd/system/transcendenced${ALIASD}.service >/dev/null 2>&1
 systemctl daemon-reload >/dev/null 2>&1
 systemctl reset-failed >/dev/null 2>&1
+lineNum="$(grep -n "${ALIASD}" bin/start_nodes.sh | head -n 1 | cut -d: -f1)"
+lineNum2=$((lineNum+1))
+
+sed -i "${lineNum}d;${lineNum2}d" /root/bin/start_nodes.sh
 
 ## Removing node files 
 
 rm /root/.transcendence_$ALIASD -r >/dev/null 2>&1
 sed -i "/${ALIASD}/d" .bashrc
-crontab -l -u root | grep -v transcendenced$ALIASD | crontab -u root - >/dev/null 2>&1
+crontab -l -u root | grep -v $ALIASD | crontab -u root - >/dev/null 2>&1
+
 source .bashrc
 echo "1" >> /root/bin/deleted
 rm /root/bin/transcendence*_$ALIASD.sh
@@ -274,25 +296,7 @@ fi
 
 if [ $DO = "1" ]
 then
-
-echo "1 - Easy mode"
-echo "2 - Expert mode"
-echo "Please select a option:"
-read EE
-echo ""
-
-if [ $EE = "1" ] 
-then
-MAXC="64"
-fi
-
-if [ $EE = "2" ] 
-then
-echo ""
-echo "Enter max connections value"
-read MAXC
-fi
-
+MAXC="32"
 if [ ! -f "/usr/local/bin/transcendenced" ]
 then
   ## Downloading and installing wallet 
@@ -324,15 +328,15 @@ then
 echo -e "${RED}First node must be ipv4.${NC}"
 let COUNTER=0
 RPCPORT=$(($RPCPORTT+$COUNTER))
-
+  if [ -z $1 ]; then
   echo ""
   echo "Enter alias for first node"
   read ALIAS
-  CONF_DIR=/root/.transcendence_$ALIAS
-  
   echo ""
   echo "Enter masternode private key for node $ALIAS"
   read PRIVKEY
+  fi
+  CONF_DIR=/root/.transcendence_$ALIAS
   
   mkdir /root/.transcendence_$ALIAS
   unzip Bootstrap.zip -d /root/.transcendence_$ALIAS >/dev/null 2>&1
@@ -365,30 +369,28 @@ RPCPORT=$(($RPCPORTT+$COUNTER))
   echo "masternodeprivkey=$PRIVKEY" >> transcendence.conf_TEMP
   
   mv transcendence.conf_TEMP $CONF_DIR/transcendence.conf
+  
+  crontab -l > cron$ALIAS
+  echo "@reboot sh /root/bin/start_nodes.sh" >> cron$ALIAS
+  crontab cron$ALIAS
+  rm cron$ALIAS
   echo ""
   echo -e "Your ip is ${GREEN}$IP4:$PORT${NC}"
   
 	## Setting up .bashrc
-  
-	echo "alias ${ALIAS}_status=\"transcendence-cli -datadir=/root/.transcendence_${ALIAS} masternode status\"" >> .bashrc
-	echo "alias ${ALIAS}_stop=\"systemctl stop transcendenced$ALIAS\"" >> .bashrc
-	echo "alias ${ALIAS}_start=\"systemctl start transcendenced$ALIAS\""  >> .bashrc
-	echo "alias ${ALIAS}_config=\"nano /root/.transcendence_${ALIAS}/transcendence.conf\""  >> .bashrc
-	echo "alias ${ALIAS}_getinfo=\"transcendence-cli -datadir=/root/.transcendence_${ALIAS} getinfo\"" >> .bashrc
-	echo "alias ${ALIAS}_getpeerinfo=\"transcendence-cli -datadir=/root/.transcendence_${ALIAS} getpeerinfo\"" >> .bashrc
-	echo "alias ${ALIAS}_resync=\"/root/bin/transcendenced_${ALIAS}.sh -resync\"" >> .bashrc
-	echo "alias ${ALIAS}_reindex=\"/root/bin/transcendenced_${ALIAS}.sh -reindex\"" >> .bashrc
-	echo "alias ${ALIAS}_restart=\"systemctl restart transcendenced$ALIAS\""  >> .bashrc
-	
+	configure_bashrc
 	## Creating systemd service
 	configure_systemd
 fi
 
 if [ $IP4COUNT != "0" ] 
 then
-
+if [ -z $1 ]; then
 echo "How many ipv6 nodes do you want to install on this server?"
 read MNCOUNT
+else
+MNCOUNT=1
+fi
 
 ## This can probably be shortened but whatever
 
@@ -403,20 +405,19 @@ while [  $COUNTER -lt $MNCOUNT ]
 do
   RPCPORT=$(($RPCPORTT+$COUNTER))
   
+  if [ -z $1 ]; then
   echo ""
   echo "Enter alias for new node"
   read ALIAS
-  
-  CONF_DIR=/root/.transcendence_$ALIAS
-  
-  echo "up /sbin/ip -6 addr add ${gateway}$COUNTER$MASK dev $face # $ALIAS" >> /etc/network/interfaces
-  /sbin/ip -6 addr add ${gateway}$COUNTER$MASK dev $face
-  
   echo ""
   echo "Enter masternode private key for node $ALIAS"
   read PRIVKEY
+  fi
   
+  CONF_DIR=/root/.transcendence_$ALIAS
+  /sbin/ip -6 addr add ${gateway}$COUNTER$MASK dev $face
   mkdir /root/.transcendence_$ALIAS
+  
   unzip Bootstrap.zip -d ~/.transcendence_$ALIAS >/dev/null 2>&1
   echo '#!/bin/bash' > ~/bin/transcendenced_$ALIAS.sh
   echo "transcendenced -daemon -conf=$CONF_DIR/transcendence.conf -datadir=$CONF_DIR "'$*' >> ~/bin/transcendenced_$ALIAS.sh
@@ -425,7 +426,6 @@ do
   echo '#!/bin/bash' > ~/bin/transcendence-tx_$ALIAS.sh
   echo "transcendence-tx -conf=$CONF_DIR/transcendence.conf -datadir=$CONF_DIR "'$*' >> ~/bin/transcendence-tx_$ALIAS.sh
   chmod 755 ~/bin/transcendence*.sh
-  
   
   echo "rpcuser=user"`shuf -i 100000-10000000 -n 1` >> transcendence.conf_TEMP
   echo "rpcpassword=pass"`shuf -i 100000-10000000 -n 1` >> transcendence.conf_TEMP
@@ -446,21 +446,21 @@ do
   echo "masternodeprivkey=$PRIVKEY" >> transcendence.conf_TEMP
   mv transcendence.conf_TEMP $CONF_DIR/transcendence.conf
   
+  crontab -l -u root | grep -v start_nodes.sh | crontab -u root -
+  crontab -l > cron$ALIAS
+  echo "@reboot /sbin/ip -6 addr add ${gateway}$COUNTER$MASK dev $face # $ALIAS" >> cron$ALIAS
+  crontab cron$ALIAS
+  rm cron$ALIAS
+  crontab -l > cron$ALIAS
+  echo "@reboot sh /root/bin/start_nodes.sh" >> cron$ALIAS
+  crontab cron$ALIAS
+  rm cron$ALIAS
+  
   echo ""
   echo -e "Your ip is ${GREEN}[${gateway}$COUNTER]:$PORT${NC}"
   
 	## Setting up .bashrc
-  
-	echo "alias ${ALIAS}_status=\"transcendence-cli -datadir=/root/.transcendence_${ALIAS} masternode status\"" >> .bashrc
-	echo "alias ${ALIAS}_stop=\"systemctl stop transcendenced$ALIAS\"" >> .bashrc
-	echo "alias ${ALIAS}_start=\"systemctl start transcendenced$ALIAS\""  >> .bashrc
-	echo "alias ${ALIAS}_config=\"nano /root/.transcendence_${ALIAS}/transcendence.conf\""  >> .bashrc
-	echo "alias ${ALIAS}_getinfo=\"transcendence-cli -datadir=/root/.transcendence_${ALIAS} getinfo\"" >> .bashrc
-	echo "alias ${ALIAS}_getpeerinfo=\"transcendence-cli -datadir=/root/.transcendence_${ALIAS} getpeerinfo\"" >> .bashrc
-	echo "alias ${ALIAS}_resync=\"/root/bin/transcendenced_${ALIAS}.sh -resync\"" >> .bashrc
-	echo "alias ${ALIAS}_reindex=\"/root/bin/transcendenced_${ALIAS}.sh -reindex\"" >> .bashrc
-	echo "alias ${ALIAS}_restart=\"systemctl restart transcendenced$ALIAS\""  >> .bashrc
-	
+	configure_bashrc
 	## Creating systemd service
 	configure_systemd
 	COUNTER=$((COUNTER+1))
