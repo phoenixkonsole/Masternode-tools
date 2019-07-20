@@ -106,7 +106,7 @@ WantedBy=multi-user.target
 EOF
   systemctl daemon-reload
   sleep 2
-  echo "sleep 5" >> /root/bin/start_nodes.sh
+  echo "sleep 10" >> /root/bin/start_nodes.sh
   echo "systemctl start transcendenced$ALIAS" >> /root/bin/start_nodes.sh
   chmod +x /root/bin/start_nodes.sh
   systemctl start transcendenced$ALIAS.service
