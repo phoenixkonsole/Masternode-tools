@@ -1,15 +1,15 @@
 #!/bin/bash
 cd ~
+if [[ $EUID -ne 0 ]]; then
+   echo -e "${RED}$0 must be run as root.${NC}"
+   exit 1
+fi
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 
 ## Error checks
-
-if [[ $EUID -ne 0 ]]; then
-   echo -e "${RED}$0 must be run as root.${NC}"
-   exit 1
-fi
 
 perl -i -ne 'print if ! $a{$_}++' /etc/network/interfaces
 
@@ -136,6 +136,16 @@ then
 
 echo -e "${GREEN}Please wait, updating wallet.${NC}"
 sleep 1
+
+if [ -f "/root/bin/v1.1.0.1" ]
+then
+rm .transcendence*/blocks -rf
+rm .transcendence*/chainstate -rf
+rm .transcendence*/sporks -rf
+rm .transcendence*/zerocoin -rf
+rm /root/bin/v1.1.0.1
+fi
+
 wget $link -O /root/Linux.zip 
 rm /usr/local/bin/transcendence*
 unzip Linux.zip -d /usr/local/bin 
@@ -490,4 +500,3 @@ echo "lobo's Transcendence Address for donations: GWe4v6A6tLg9pHYEN5MoAsYLTadtef
 echo "xispita's Transcendence Address for donations: GRDqyK7m9oTsXjUsmiPDStoAfuX1H7eSfh" 
 echo "Bitcoin Address for donations: 1NqYjVMA5DhuLytt33HYgP5qBajeHLYn4d"
 source .bashrc
-exit
