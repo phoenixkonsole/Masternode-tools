@@ -309,7 +309,7 @@ fi
 
 if [ $DO = "1" ]
 then
-MAXC="32"
+MAXC="64"
 if [ ! -f "/usr/local/bin/transcendenced" ]
 then
   ## Downloading and installing wallet 
