@@ -137,13 +137,16 @@ then
 echo -e "${GREEN}Please wait, updating wallet.${NC}"
 sleep 1
 
-if [ -f "/root/bin/v1.1.0.1" ]
+mnalias=$(find /root/.transcendence_* -maxdepth 0 -type d | cut -c22- | head -n 1)
+PROTOCOL=$(transcendence-cli -datadir=/root/.transcendence_${mnalias} getinfo | grep "protocolversion" | sed 's/[^0-9]*//g')
+
+if [ $PROTOCOL != 71004 ]
 then
+sed -i 's/22123/8051/g' /root/.transcendence*/transcendence.conf
 rm .transcendence*/blocks -rf
 rm .transcendence*/chainstate -rf
 rm .transcendence*/sporks -rf
 rm .transcendence*/zerocoin -rf
-rm /root/bin/v1.1.0.1
 fi
 
 wget $link -O /root/Linux.zip 
@@ -323,7 +326,7 @@ fi
 
 if [ ! -f Bootstrap.zip ]
 then
-wget https://aeros-os.org/Bootstrap2.zip -O /root/Bootstrap.zip
+wget https://github.com/phoenixkonsole/transcendence/releases/download/v2.0.0.0/Bootstrap.zip -O /root/Bootstrap.zip
 fi
 
 ## Start of node creation
