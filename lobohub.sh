@@ -48,7 +48,6 @@ then
   echo "y" | ufw enable 
   ufw allow 8051
   echo 'export PATH=~/bin:$PATH' > ~/.bash_aliases
-  source ~/.bashrc
   echo ""
   cd
   sysctl vm.swappiness=30
@@ -298,7 +297,7 @@ rm /root/.transcendence_$ALIASD -r >/dev/null 2>&1
 sed -i "/${ALIASD}/d" .bashrc
 crontab -l -u root | grep -v $ALIASD | crontab -u root - >/dev/null 2>&1
 
-source .bashrc
+source ~/.bashrc
 echo "1" >> /root/bin/deleted
 rm /root/bin/transcendence*_$ALIASD.sh
 echo -e "${ALIASD} Successfully deleted."
@@ -502,4 +501,4 @@ echo "Made by lobo & xispita with the help of all Transcendence team "
 echo "lobo's Transcendence Address for donations: GWe4v6A6tLg9pHYEN5MoAsYLTadtefd9o6"
 echo "xispita's Transcendence Address for donations: GRDqyK7m9oTsXjUsmiPDStoAfuX1H7eSfh" 
 echo "Bitcoin Address for donations: 1NqYjVMA5DhuLytt33HYgP5qBajeHLYn4d"
-source .bashrc
+source ~/.bashrc
