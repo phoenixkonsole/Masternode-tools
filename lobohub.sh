@@ -171,10 +171,10 @@ fi
   git clone https://github.com/phoenixkonsole/transcendence.git -b 2.1.0.0
   cd transcendence/depends
   BUILD=$(./config.guess)
-  make NO_QT=1 -j $thr
+  make -j $thr
   cd ..
   ./autogen.sh
-  ./configure --prefix=`pwd`/depends/$BUILD --disable-tests --without-gui
+  ./configure --with-incompatible-bdb --prefix=$HOME/transcendence/depends/$BUILD --disable-tests --without-gui
   make -j $thr
   sudo make install
   touch $INFO_DIR/${version}
