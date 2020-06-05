@@ -4,7 +4,6 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 USER=`whoami`
-link="https://github.com/phoenixkonsole/transcendence/releases/download/$version"
 ## Setup
 
 if [ $USER = "root" ]
@@ -55,6 +54,7 @@ fi
 
 IP=$(curl -s4 api.ipify.org)
 version=$(curl -s https://raw.githubusercontent.com/lobomfz/Masternode-tools/no-ipv6/current)
+link="https://github.com/phoenixkonsole/transcendence/releases/download/$version"
 
 function configure_systemd() {
   sudo su -c 'cat << EOF > /etc/systemd/system/transcendenced.service
