@@ -209,7 +209,7 @@ then
 if [ ! -d ~/.transcendence ] 
 then
   if [ -z $1 ]; then
-  printf "\nEnter masternode private key for your masternode: "
+  printf "\nEnter masternode private key: "
   read PRIVKEY
   fi
   CONF_DIR=$HOME/.transcendence
