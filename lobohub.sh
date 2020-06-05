@@ -152,7 +152,7 @@ then
 
 ## Installing pre-requisites
 
-sudo apt install -y zip unzip bc curl nano lshw ufw libexpat-dev gawk libdb++-dev git zip automake software-properties-common unzip build-essential libtool autotools-dev autoconf pkg-config libssl-dev libcrypto++-dev libevent-dev libminiupnpc-dev libgmp-dev libboost-all-dev devscripts libsodium-dev libprotobuf-dev protobuf-compiler libcrypto++-dev libminiupnpc-dev gcc g++ --auto-remove
+sudo apt install -y zip unzip bc curl libunbound-dev nano lshw ufw libexpat-dev gawk libdb++-dev git zip automake software-properties-common unzip build-essential libtool autotools-dev autoconf pkg-config libssl-dev libcrypto++-dev libevent-dev libminiupnpc-dev libgmp-dev libboost-all-dev devscripts libsodium-dev libprotobuf-dev protobuf-compiler libcrypto++-dev libminiupnpc-dev gcc g++ --auto-remove
 thr="$(nproc)"
 
 ## Compatibility issues
