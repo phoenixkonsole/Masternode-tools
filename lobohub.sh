@@ -1,269 +1,184 @@
 #!/bin/bash
 cd ~
-if [[ $EUID -ne 0 ]]; then
-   echo -e "${RED}$0 must be run as root.${NC}"
-   exit 1
-fi
-
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
-
-## Error checks
-
-perl -i -ne 'print if ! $a{$_}++' /etc/network/interfaces
-
-if [ ! -d "/root/bin" ]; then
-mkdir /root/bin
-fi
-
+USER=`whoami`
+IP=$(curl -s4 api.ipify.org)
+version=$(curl -s https://raw.githubusercontent.com/lobomfz/Masternode-tools/no-ipv6/current)
+link="https://github.com/phoenixkonsole/transcendence/releases/download/$version"
 ## Setup
 
-if [ ! -f "/root/bin/dep" ]
+if [ $USER = "root" ]
 then
-  clear
-  echo -e "Installing ${GREEN}Transcendence dependencies${NC}. Please wait."
+HOME=/root
+else
+HOME=/home/$USER
+fi
+INFO_DIR=$HOME/.local/share/telos
+if [ ! -d "$INFO_DIR" ]; then
+mkdir -p $INFO_DIR
+fi
+
+if [ ! -f "$INFO_DIR/dep" ]
+then
+  printf "Installing ${GREEN}Transcendence dependencies${NC}. Please wait.\n"
   sleep 2
-  apt update 
-  apt -y upgrade
+  if [ $USER = "root" ]
+  then
   apt update
-  apt install -y zip unzip bc curl nano lshw gawk ufw
+  apt install -y sudo
+  else
+  sudo apt update
+  fi
+  sudo apt -y upgrade
+  sudo apt install -y zip p7zip-full unzip curl nano lshw gawk ufw wget
   
   ## Checking for Swap
   
   if [ ! -f /var/swap.img ]
   then
-  echo -e "${RED}Creating swap. This may take a while.${NC}"
-  dd if=/dev/zero of=/var/swap.img bs=2048 count=1M
-  chmod 600 /var/swap.img
-  mkswap /var/swap.img 
-  swapon /var/swap.img 
-  free -m
-  echo "/var/swap.img none swap sw 0 0" >> /etc/fstab
+  printf "\n${RED}Creating swap. This may take a while.${NC}\n"
+  sudo dd if=/dev/zero of=/var/swap.img bs=2048 count=1M
+  sudo chmod 600 /var/swap.img
+  sudo mkswap /var/swap.img 
+  sudo swapon /var/swap.img 
+  sudo printf "\n/var/swap.img none swap sw 0 0" >> /etc/fstab
   fi
   
-  ufw allow ssh/tcp
-  ufw limit ssh/tcp
-  ufw logging on
-  echo "y" | ufw enable 
-  ufw allow 8051
-  echo 'export PATH=~/bin:$PATH' > ~/.bash_aliases
-  echo ""
+  sudo ufw allow ssh/tcp
+  sudo ufw limit ssh/tcp
+  sudo ufw logging on
+  sudo su -c 'echo "y" | ufw enable'
+  sudo ufw allow 8051
   cd
-  sysctl vm.swappiness=30
-  sysctl vm.vfs_cache_pressure=200
-  echo 'vm.swappiness=30' | tee -a /etc/sysctl.conf
-  echo 'vm.vfs_cache_pressure=200' | tee -a /etc/sysctl.conf
-  touch /root/bin/dep
+  touch $INFO_DIR/dep
 fi
-
-## Constants
-
-IP4COUNT=$(find /root/.transcendence_* -maxdepth 0 -type d | wc -l)
-IP6COUNT=$(crontab -l -u root | wc -l)
-DELETED="$(cat /root/bin/deleted | wc -l)"
-ALIASES="$(find /root/.transcendence_* -maxdepth 0 -type d | cut -c22-)"
-face="$(lshw -C network | grep "logical name:" | sed -e 's/logical name:/logical name: /g' | awk '{print $3}' | head -n1)"
-IP4=$(curl -s4 api.ipify.org)
-version=$(curl https://raw.githubusercontent.com/lobomfz/Masternode-tools/master/current)
-link=$(curl https://raw.githubusercontent.com/lobomfz/Masternode-tools/master/download)
-PORT=8051
-RPCPORTT=8351
-gateway1=$(/sbin/route -A inet6 | grep -v ^fe80 | grep -v ^ff00 | grep -w "$face")
-gateway2=${gateway1:0:26}
-gateway3="$(echo -e "${gateway2}" | tr -d '[:space:]')"
-if [[ $gateway3 = *"128"* ]]; then
-  gateway=${gateway3::-5}
-fi
-if [[ $gateway3 = *"64"* ]]; then
-  gateway=${gateway3::-3}
-fi
-MASK="/64"
-
-## Systemd Function
 
 function configure_systemd() {
-  cat << EOF > /etc/systemd/system/transcendenced$ALIAS.service
+  sudo su -c 'cat << EOF > /etc/systemd/system/transcendenced.service
 [Unit]
-Description=transcendenced$ALIAS service
+Description=transcendenced.service
 After=network.target
- [Service]
+[Service]
 User=root
 Group=root
 Type=forking
-#PIDFile=/root/.transcendence_$ALIAS/transcendenced.pid
-ExecStart=/root/bin/transcendenced_$ALIAS.sh
-ExecStop=/root/bin/transcendence-cli_$ALIAS.sh stop
+#PIDFile=$HOME/.transcendence/transcendenced.pid
+ExecStart=/usr/local/bin/transcendenced
+ExecStop=/usr/local/bin/transcendence-cli stop
 Restart=always
 PrivateTmp=true
 TimeoutStopSec=60s
 TimeoutStartSec=10s
 StartLimitInterval=120s
 StartLimitBurst=5
- [Install]
+[Install]
 WantedBy=multi-user.target
-EOF
-  systemctl daemon-reload
-  sleep 2
-  echo "sleep 10" >> /root/bin/start_nodes.sh
-  echo "systemctl start transcendenced$ALIAS" >> /root/bin/start_nodes.sh
-  chmod +x /root/bin/start_nodes.sh
-  systemctl start transcendenced$ALIAS.service
+EOF'
+  sudo systemctl daemon-reload
+  sudo systemctl enable transcendenced
+  sudo systemctl start transcendenced
 }
 
-function configure_bashrc() {
-	echo "alias ${ALIAS}_status=\"transcendence-cli -datadir=/root/.transcendence_${ALIAS} masternode status\"" >> .bashrc
-	echo "alias ${ALIAS}_stop=\"systemctl stop transcendenced$ALIAS\"" >> .bashrc
-	echo "alias ${ALIAS}_start=\"systemctl start transcendenced$ALIAS\""  >> .bashrc
-	echo "alias ${ALIAS}_config=\"nano /root/.transcendence_${ALIAS}/transcendence.conf\""  >> .bashrc
-	echo "alias ${ALIAS}_getinfo=\"transcendence-cli -datadir=/root/.transcendence_${ALIAS} getinfo\"" >> .bashrc
-	echo "alias ${ALIAS}_getpeerinfo=\"transcendence-cli -datadir=/root/.transcendence_${ALIAS} getpeerinfo\"" >> .bashrc
-	echo "alias ${ALIAS}_resync=\"/root/bin/transcendenced_${ALIAS}.sh -resync\"" >> .bashrc
-	echo "alias ${ALIAS}_reindex=\"/root/bin/transcendenced_${ALIAS}.sh -reindex\"" >> .bashrc
-	echo "alias ${ALIAS}_restart=\"systemctl restart transcendenced$ALIAS\""  >> .bashrc
+function configure_bashrc() {	
+	cat << EOF >> ~/.bashrc
+alias telos_status="transcendence-cli masternode status"
+alias telos_stop="systemctl stop transcendenced"
+alias telos_start="systemctl start transcendenced"
+alias telos_config="nano $HOME/.transcendence/transcendence.conf"
+alias telos_getinfo="transcendence-cli getinfo"
+alias telos_getpeerinfo="transcendence-cli getpeerinfo"
+alias telos_resync="transcendenced -resync"
+alias telos_reindex="transcendenced -reindex"
+alias telos_restart="systemctl restart transcendenced"
+EOF
+}
+
+function startnode() {
+	sudo systemctl start transcendence
 }
 
 ## Check for wallet update
 
-clear
-
 if [ -f "/usr/local/bin/transcendenced" ]
 then
 
-if [ ! -f "/root/bin/$version" ]
+if [ ! -f "$INFO_DIR/${version}" ]
 then
 
-echo -e "${GREEN}Please wait, updating wallet.${NC}"
+printf "\n${GREEN}Please wait, updating wallet.${NC}"
 sleep 1
 
-mnalias=$(find /root/.transcendence_* -maxdepth 0 -type d | cut -c22- | head -n 1)
-PROTOCOL=$(transcendence-cli -datadir=/root/.transcendence_${mnalias} getinfo | grep "protocolversion" | sed 's/[^0-9]*//g')
-
-if [ $PROTOCOL != 71004 ]
-then
-sed -i 's/22123/8051/g' /root/.transcendence*/transcendence.conf
-rm .transcendence*/blocks -rf
-rm .transcendence*/chainstate -rf
-rm .transcendence*/sporks -rf
-rm .transcendence*/zerocoin -rf
-fi
-
-wget $link -O /root/Linux.zip 
+wget $link/Linux.zip -O ~/Linux.zip 
 rm /usr/local/bin/transcendence*
-unzip Linux.zip -d /usr/local/bin 
-chmod +x /usr/local/bin/transcendence*
+sudo unzip Linux.zip -d /usr/local/bin 
+sudo chmod +x /usr/local/bin/transcendence*
 rm Linux.zip
-mkdir /root/bin
-touch /root/bin/$version
-echo -e "${GREEN}Wallet updated.${NC} ${RED}PLEASE RESTART YOUR NODES OR REBOOT VPS WHEN POSSIBLE.${NC}"
-echo ""
-
+touch $INFO_DIR/${version}
+printf "\n${GREEN}Wallet updated.${NC} ${RED}PLEASE RESTART YOUR NODES OR REBOOT SYSTEM WHEN POSSIBLE.${NC}"
+fi
 fi
 
-fi
-
-## Start of Guided Script
+clear
 if [ -z $1 ]; then
-echo "1 - Create new nodes"
-echo "2 - Remove an existing node"
-echo "3 - List aliases"
-echo "4 - Check node status"
-echo "5 - Compile wallet locally"
-echo "What would you like to do?"
+printf "1 - Create masternode"
+printf "\n2 - Delete masternode"
+printf "\n3 - Compile wallet locally"
+printf "\nWhat would you like to do?\n"
 read DO
-echo ""
 else
 DO=$1
-ALIAS=$2
-ALIASD=$2
-PRIVKEY=$3
+PRIVKEY=$2
 fi
 
 if [ $DO = "help" ]
 then
-echo "Usage:"
-echo "./lobohub.sh Action Alias PrivateKey"
-fi
-
-## List aliases
-
-if [ $DO = "3" ]
-then
-echo -e "${GREEN}${ALIASES}${NC}"
-echo ""
-echo "1 - Create new nodes"
-echo "2 - Remove an existing node"
-echo "4 - Check for node errors"
-echo "5 - Compile wallet locally (optional)"
-echo "What would you like to do?"
-read DO
-echo ""
+printf "\nUsage:"
+printf "\n./lobohub.sh Create/Delete PrivateKey(If creating)"
 fi
 
 ## Compiling wallet
 
-if [ $DO = "5" ]
+if [ $DO = "3" ]
 then
-echo -e "${GREEN}Compiling wallet, this may take some time.${NC}"
+printf "\n${GREEN}Compiling wallet, this may take some time.${NC}"
 sleep 2
-systemctl stop transcendenced*
 
-if [ ! -f "/root/bin/depc" ]
+sudo systemctl stop transcendenced
+
+if [ ! -f "$INFO_DIR/depc" ]
 then
 
 ## Installing pre-requisites
 
-apt install -y zip unzip bc curl nano lshw ufw gawk libdb++-dev git zip automake software-properties-common unzip build-essential libtool autotools-dev autoconf pkg-config libssl-dev libcrypto++-dev libevent-dev libminiupnpc-dev libgmp-dev libboost-all-dev devscripts libsodium-dev libprotobuf-dev protobuf-compiler libcrypto++-dev libminiupnpc-dev gcc-5 g++-5 --auto-remove
+sudo apt install -y zip unzip bc curl nano lshw ufw libexpat-dev gawk libdb++-dev git zip automake software-properties-common unzip build-essential libtool autotools-dev autoconf pkg-config libssl-dev libcrypto++-dev libevent-dev libminiupnpc-dev libgmp-dev libboost-all-dev devscripts libsodium-dev libprotobuf-dev protobuf-compiler libcrypto++-dev libminiupnpc-dev gcc g++ --auto-remove
 thr="$(nproc)"
 
 ## Compatibility issues
   
   export LC_CTYPE=en_US.UTF-8
   export LC_ALL=en_US.UTF-8
-  apt update
-  apt install libssl1.0-dev -y
-  apt install libzmq3-dev -y --auto-remove
-  update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-5 100
-  update-alternatives --install /usr/bin/g++ g++ /usr/bin/g++-5 100
-  touch /root/bin/depc
+  sudo apt update
+  sudo apt install libssl1.0-dev -y
+  sudo apt install libzmq3-dev -y --auto-remove
+  touch $INFO_DIR/depc
 
 fi
 
 ## Preparing and building
 
-  git clone https://github.com/phoenixkonsole/transcendence.git
-  cd transcendence
+  git clone https://github.com/phoenixkonsole/transcendence.git -b 2.1.0.0
+  cd transcendence/depends
+  BUILD=$(./config.guess)
+  make NO_QT=1 -j $thr
+  cd ..
   ./autogen.sh
-  ./configure --with-incompatible-bdb --disable-tests --without-gui
+  ./configure --prefix=`pwd`/depends/$BUILD --disable-tests --without-gui
   make -j $thr
-  make install
-  touch /root/bin/$version
-  
-systemctl start transcendenced*
-
-fi
-
-## Checking for node errors
-
-if [ $DO = "4" ]
-then
-
-echo $ALIASES > temp1
-cat temp1 | grep -o '[^ |]*' > temp2
-CN="$(cat temp2 | wc -l)"
-rm temp1
-let LOOP=0
-
-while [  $LOOP -lt $CN ]
-do
-
-LOOP=$((LOOP+1))
-CURRENT="$(sed -n "${LOOP}p" temp2)"
-
-echo -e "${GREEN}${CURRENT}${NC}:"
-sh /root/bin/transcendence-cli_${CURRENT}.sh masternode status | grep "message"
-done
-
+  sudo make install
+  touch $INFO_DIR/${version}
+  start_nodes
 
 fi
 
@@ -271,234 +186,76 @@ fi
 
 if [ $DO = "2" ]
 then
-if [ -z $1 ]; then
-echo "Input the alias of the node that you want to delete"
-read ALIASD
-fi
-
-echo ""
-echo -e "${GREEN}Deleting ${ALIASD}${NC}. Please wait."
-
+printf "\n${GREEN}Deleting Telos masternode${NC}. Please wait."
 ## Removing service
-
-systemctl stop transcendenced$ALIASD >/dev/null 2>&1
-systemctl disable transcendenced$ALIASD >/dev/null 2>&1
-rm /etc/systemd/system/transcendenced${ALIASD}.service >/dev/null 2>&1
-systemctl daemon-reload >/dev/null 2>&1
-systemctl reset-failed >/dev/null 2>&1
-lineNum="$(grep -n "${ALIASD}" bin/start_nodes.sh | head -n 1 | cut -d: -f1)"
-lineNum2=$((lineNum+1))
-
-sed -i "${lineNum}d;${lineNum2}d" /root/bin/start_nodes.sh
+sudo systemctl stop transcendenced >/dev/null 2>&1
+sudo systemctl disable transcendenced > /dev/null 2>&1
+sudo rm /etc/systemd/system/transcendenced.service >/dev/null 2>&1
+sudo systemctl daemon-reload >/dev/null 2>&1
+sudo systemctl reset-failed >/dev/null 2>&1
 
 ## Removing node files 
 
-rm /root/.transcendence_$ALIASD -r >/dev/null 2>&1
-sed -i "/${ALIASD}/d" .bashrc
-crontab -l -u root | grep -v $ALIASD | crontab -u root - >/dev/null 2>&1
-
-source ~/.bashrc
-echo "1" >> /root/bin/deleted
-rm /root/bin/transcendence*_$ALIASD.sh
-echo -e "${ALIASD} Successfully deleted."
-
+rm ~/.transcendence -r
+sed -i '/telos/d' ~/.bashrc
+printf "\nTelos masternode successfully deleted."
 fi
 
 ## Creating new nodes
 
 if [ $DO = "1" ]
 then
-MAXC="64"
-if [ ! -f "/usr/local/bin/transcendenced" ]
+if [ ! -d ~/.transcendence ] 
 then
-  ## Downloading and installing wallet 
-  echo -e "${GREEN}Downloading precompiled wallet${NC}"
-  wget $link -O /root/Linux.zip 
-  mkdir /root/bin
-  touch /root/bin/$version
-  unzip Linux.zip -d /usr/local/bin 
-  chmod +x /usr/local/bin/transcendence*
-  rm Linux.zip  
-fi
-
-## Downloading bootstrap
-
-if [ ! -f Bootstrap.zip ]
-then
-wget https://github.com/phoenixkonsole/transcendence/releases/download/v2.0.0.0/Bootstrap.zip -O /root/Bootstrap.zip
-fi
-
-## Start of node creation
-
-echo -e "Telos nodes currently installed: ${GREEN}${IP4COUNT}${NC}, Telos nodes previously Deleted: ${GREEN}${DELETED}${NC}"
-echo ""
-
-
-if [ $IP4COUNT = "0" ] 
-then
-
-echo -e "${RED}First node must be ipv4.${NC}"
-let COUNTER=0
-RPCPORT=$(($RPCPORTT+$COUNTER))
   if [ -z $1 ]; then
-  echo ""
-  echo "Enter alias for first node"
-  read ALIAS
-  echo ""
-  echo "Enter masternode private key for node $ALIAS"
+  printf "\nEnter masternode private key for your masternode: "
   read PRIVKEY
   fi
-  CONF_DIR=/root/.transcendence_$ALIAS
-  
-  mkdir /root/.transcendence_$ALIAS
-  unzip Bootstrap.zip -d /root/.transcendence_$ALIAS >/dev/null 2>&1
-  echo '#!/bin/bash' > ~/bin/transcendenced_$ALIAS.sh
-  echo "transcendenced -daemon -conf=$CONF_DIR/transcendence.conf -datadir=$CONF_DIR "'$*' >> ~/bin/transcendenced_$ALIAS.sh
-  echo '#!/bin/bash' > ~/bin/transcendence-cli_$ALIAS.sh
-  echo "transcendence-cli -conf=$CONF_DIR/transcendence.conf -datadir=$CONF_DIR "'$*' >> ~/bin/transcendence-cli_$ALIAS.sh
-  echo '#!/bin/bash' > ~/bin/transcendence-tx_$ALIAS.sh
-  echo "transcendence-tx -conf=$CONF_DIR/transcendence.conf -datadir=$CONF_DIR "'$*' >> ~/bin/transcendence-tx_$ALIAS.sh
-  chmod 755 ~/bin/transcendence*.sh
-
-  echo "rpcuser=user"`shuf -i 100000-10000000 -n 1` >> transcendence.conf_TEMP
-  echo "rpcpassword=pass"`shuf -i 100000-10000000 -n 1` >> transcendence.conf_TEMP
-  echo "rpcallowip=127.0.0.1" >> transcendence.conf_TEMP
-  echo "rpcport=$RPCPORT" >> transcendence.conf_TEMP
-  echo "listen=1" >> transcendence.conf_TEMP
-  echo "server=1" >> transcendence.conf_TEMP
-  echo "daemon=1" >> transcendence.conf_TEMP
-  echo "logtimestamps=1" >> transcendence.conf_TEMP
-  echo "maxconnections=$MAXC" >> transcendence.conf_TEMP
-  echo "masternode=1" >> transcendence.conf_TEMP
-  echo "dbcache=20" >> transcendence.conf_TEMP
-  echo "maxorphantx=5" >> transcendence.conf_TEMP
-  echo "maxmempool=100" >> transcendence.conf_TEMP
-  echo "" >> transcendence.conf_TEMP
-  echo "" >> transcendence.conf_TEMP
-  echo "bind=$IP4:$PORT" >> transcendence.conf_TEMP
-  echo "externalip=$IP4" >> transcendence.conf_TEMP
-  echo "masternodeaddr=$IP4:$PORT" >> transcendence.conf_TEMP
-  echo "masternodeprivkey=$PRIVKEY" >> transcendence.conf_TEMP
-  
-  mv transcendence.conf_TEMP $CONF_DIR/transcendence.conf
-  
-  crontab -l > cron$ALIAS
-  echo "@reboot sh /root/bin/start_nodes.sh" >> cron$ALIAS
-  crontab cron$ALIAS
-  rm cron$ALIAS
-  echo ""
-  echo -e "Your ip is ${GREEN}$IP4:$PORT${NC}"
-  
-	## Setting up .bashrc
-	configure_bashrc
-	## Creating systemd service
-	configure_systemd
+  CONF_DIR=~/.transcendence
+  mkdir $CONF_DIR
+  if [ ! -f "/usr/local/bin/transcendenced" ]
+  then
+  printf "\n${GREEN}Downloading precompiled wallet${NC}\n"
+  wget $link/Linux.zip  -O ~/Linux.zip 
+  touch $INFO_DIR/${version}
+  sudo unzip Linux.zip -d /usr/local/bin 
+  sudo chmod +x /usr/local/bin/transcendence*
+  rm Linux.zip 
 fi
+  if [ ! -f Bootstrap.7z ]
+  then
+  printf "\nDownloading bootstrap"
+  wget $link/Bootstrap.7z -O ~/Bootstrap.7z
+  fi
+  printf "\n${GREEN}Extracting bootstrap, may take some time${NC}\n"
+  7z x Bootstrap.7z -o$CONF_DIR
+  
+  cat << EOF >> $CONF_DIR/transcendence.conf
+rpcuser=user`shuf -i 100000-10000000 -n 1`
+rpcpassword=pass`shuf -i 100000-10000000 -n 1`
+rpcallowip=127.0.0.1
+rpcport=8351
+listen=1
+server=1
+daemon=1
+logtimestamps=1
+maxconnections=64
+masternode=1
+dbcache=20
+maxorphantx=5
+maxmempool=100
 
-if [ $IP4COUNT != "0" ] 
-then
-if [ -z $1 ]; then
-echo "How many ipv6 nodes do you want to install on this server?"
-read MNCOUNT
+externalip=$IP
+masternodeaddr=$IP:8051
+masternodeprivkey=$PRIVKEY
+EOF
+  printf "\nYour ip is ${GREEN}$IP:8051${NC}\n"
+	configure_bashrc
+	configure_systemd
 else
-MNCOUNT=1
+printf "\nOnly 1 node allowed per vps, if this is a mistake, try deleting the masternode with the script."
 fi
-
-## This can probably be shortened but whatever
-
-let MNCOUNT=MNCOUNT+1
-let MNCOUNT=MNCOUNT+IP4COUNT
-let MNCOUNT=MNCOUNT+DELETED
-let COUNTER=1
-let COUNTER=COUNTER+IP4COUNT
-let COUNTER=COUNTER+DELETED
-
-while [  $COUNTER -lt $MNCOUNT ]
-do
-  RPCPORT=$(($RPCPORTT+$COUNTER))
-  
-  if [ -z $1 ]; then
-  echo ""
-  echo "Enter alias for new node"
-  read ALIAS
-  echo ""
-  echo "Enter masternode private key for node $ALIAS"
-  read PRIVKEY
-  fi
-  
-  CONF_DIR=/root/.transcendence_$ALIAS
-  /sbin/ip -6 addr add ${gateway}$COUNTER$MASK dev $face
-  mkdir /root/.transcendence_$ALIAS
-  
-  unzip Bootstrap.zip -d ~/.transcendence_$ALIAS >/dev/null 2>&1
-  echo '#!/bin/bash' > ~/bin/transcendenced_$ALIAS.sh
-  echo "transcendenced -daemon -conf=$CONF_DIR/transcendence.conf -datadir=$CONF_DIR "'$*' >> ~/bin/transcendenced_$ALIAS.sh
-  echo '#!/bin/bash' > ~/bin/transcendence-cli_$ALIAS.sh
-  echo "transcendence-cli -conf=$CONF_DIR/transcendence.conf -datadir=$CONF_DIR "'$*' >> ~/bin/transcendence-cli_$ALIAS.sh
-  echo '#!/bin/bash' > ~/bin/transcendence-tx_$ALIAS.sh
-  echo "transcendence-tx -conf=$CONF_DIR/transcendence.conf -datadir=$CONF_DIR "'$*' >> ~/bin/transcendence-tx_$ALIAS.sh
-  chmod 755 ~/bin/transcendence*.sh
-  
-  echo "rpcuser=user"`shuf -i 100000-10000000 -n 1` >> transcendence.conf_TEMP
-  echo "rpcpassword=pass"`shuf -i 100000-10000000 -n 1` >> transcendence.conf_TEMP
-  echo "rpcallowip=127.0.0.1" >> transcendence.conf_TEMP
-  echo "rpcport=$RPCPORT" >> transcendence.conf_TEMP
-  echo "listen=1" >> transcendence.conf_TEMP
-  echo "server=1" >> transcendence.conf_TEMP
-  echo "daemon=1" >> transcendence.conf_TEMP
-  echo "logtimestamps=1" >> transcendence.conf_TEMP
-  echo "maxconnections=$MAXC" >> transcendence.conf_TEMP
-  echo "masternode=1" >> transcendence.conf_TEMP
-  echo "dbcache=20" >> transcendence.conf_TEMP
-  echo "maxorphantx=5" >> transcendence.conf_TEMP
-  echo "maxmempool=100" >> transcendence.conf_TEMP
-  echo "bind=[${gateway}$COUNTER]:$PORT" >> transcendence.conf_TEMP
-  echo "externalip=[${gateway}$COUNTER]" >> transcendence.conf_TEMP
-  echo "masternodeaddr=[${gateway}$COUNTER]:$PORT" >> transcendence.conf_TEMP
-  echo "masternodeprivkey=$PRIVKEY" >> transcendence.conf_TEMP
-  mv transcendence.conf_TEMP $CONF_DIR/transcendence.conf
-  
-  crontab -l -u root | grep -v start_nodes.sh | crontab -u root -
-  crontab -l > cron$ALIAS
-  echo "@reboot /sbin/ip -6 addr add ${gateway}$COUNTER$MASK dev $face # $ALIAS" >> cron$ALIAS
-  crontab cron$ALIAS
-  rm cron$ALIAS
-  crontab -l > cron$ALIAS
-  echo "@reboot sh /root/bin/start_nodes.sh" >> cron$ALIAS
-  crontab cron$ALIAS
-  rm cron$ALIAS
-  
-  echo ""
-  echo -e "Your ip is ${GREEN}[${gateway}$COUNTER]:$PORT${NC}"
-  
-	## Setting up .bashrc
-	configure_bashrc
-	## Creating systemd service
-	configure_systemd
-	COUNTER=$((COUNTER+1))
-	
-done
-
+printf "\nCommands:\ntelos_start\ntelos_restart\ntelos_status\ntelos_stop\ntelos_config\ntelos_getinfo\ntelos_getpeerinfo\ntelos_resync\ntelos_reindex\n"
 fi
-
-echo ""
-echo -e "${RED}Please do not set maxconnections lower than 32 or your node may not receive rewards as often.${NC}"
-echo ""
-echo "Commands:"
-echo "${ALIAS}_start"
-echo "${ALIAS}_restart"
-echo "${ALIAS}_status"
-echo "${ALIAS}_stop"
-echo "${ALIAS}_config"
-echo "${ALIAS}_getinfo"
-echo "${ALIAS}_getpeerinfo"
-echo "${ALIAS}_resync"
-echo "${ALIAS}_reindex"
-fi
-
-echo ""
-echo "Made by lobo & xispita with the help of all Transcendence team "
-echo "lobo's Transcendence Address for donations: GWe4v6A6tLg9pHYEN5MoAsYLTadtefd9o6"
-echo "xispita's Transcendence Address for donations: GRDqyK7m9oTsXjUsmiPDStoAfuX1H7eSfh" 
-echo "Bitcoin Address for donations: 1NqYjVMA5DhuLytt33HYgP5qBajeHLYn4d"
+printf "\nMade by lobo with the help of all Transcendence team\nlobo's Transcendence Address for donations: GWe4v6A6tLg9pHYEN5MoAsYLTadtefd9o6\nBitcoin Address for donations: 1NqYjVMA5DhuLytt33HYgP5qBajeHLYn4d\n"
 source ~/.bashrc
