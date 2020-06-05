@@ -82,7 +82,7 @@ EOF'
 }
 
 function configure_bashrc() {	
-	cat << EOF >> ~/.bashrc
+	cat << EOF >> $HOME/.bashrc
 alias telos_status="transcendence-cli masternode status"
 alias telos_stop="systemctl stop transcendenced"
 alias telos_start="systemctl start transcendenced"
@@ -211,7 +211,7 @@ then
   printf "\nEnter masternode private key for your masternode: "
   read PRIVKEY
   fi
-  CONF_DIR=~/.transcendence
+  CONF_DIR=$HOME/.transcendence
   mkdir $CONF_DIR
   if [ ! -f "/usr/local/bin/transcendenced" ]
   then
