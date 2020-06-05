@@ -5,7 +5,7 @@ GREEN='\033[0;32m'
 NC='\033[0m'
 USER=`whoami`
 IP=$(curl -s4 api.ipify.org)
-version=$(curl -s https://raw.githubusercontent.com/lobomfz/Masternode-tools/no-ipv6/current)
+version=$(curl -s https://raw.githubusercontent.com/lobomfz/Masternode-tools/master/current)
 link="https://github.com/phoenixkonsole/transcendence/releases/download/$version"
 ## Setup
 
@@ -188,9 +188,9 @@ if [ $DO = "2" ]
 then
 printf "\n${GREEN}Deleting Telos masternode${NC}. Please wait."
 ## Removing service
-sudo systemctl stop transcendenced >/dev/null 2>&1
+sudo systemctl stop transcendenced 
 sudo systemctl disable transcendenced > /dev/null 2>&1
-sudo rm /etc/systemd/system/transcendenced.service >/dev/null 2>&1
+sudo rm /etc/systemd/system/transcendenced.service 
 sudo systemctl daemon-reload >/dev/null 2>&1
 sudo systemctl reset-failed >/dev/null 2>&1
 
