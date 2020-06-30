@@ -256,7 +256,7 @@ EOF
 else
 printf "\nOnly 1 node allowed per vps, if this is a mistake, try deleting the masternode with the script."
 fi
-printf "\nCommands:\ntelos_start\ntelos_restart\ntelos_status\ntelos_stop\ntelos_config\ntelos_getinfo\ntelos_getpeerinfo\ntelos_resync\ntelos_reindex\n"
+printf "\nRun 'source ~/.bashrc' for your commands to work\nCommands:\ntelos_start\ntelos_restart\ntelos_status\ntelos_stop\ntelos_config\ntelos_getinfo\ntelos_getpeerinfo\ntelos_resync\ntelos_reindex\n"
 fi
 printf "\nPlease be patient after installing, wait a few minutes if the node says \"couldn't connect to server\" or \"This is not a masternode\"\n"
 source ~/.bashrc
