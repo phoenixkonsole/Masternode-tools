@@ -187,7 +187,7 @@ fi
 
 if [ $DO = "2" ]
 then
-printf "\n${RED}This will delete ALL telos Masternodes on this system if you have more than 1, are you sure? [y/n]${NC}"
+printf "\n${RED}This will delete ALL telos Masternodes on this system if you have more than 1, are you sure? [y/n]\n${NC}"
 read CONFIRM
 if [ $CONFIRM = "y" ]
 then
