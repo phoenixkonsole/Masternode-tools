@@ -121,6 +121,8 @@ printf "\n${GREEN}Wallet updated.${NC} ${RED}PLEASE RESTART YOUR NODES OR REBOOT
 fi
 fi
 
+NODECOUNT=$(find /root/.transcendence* -maxdepth 0 -type d | wc -l)
+
 clear
 if [ -z $1 ]; then
 printf "1 - Create masternode"
@@ -187,6 +189,11 @@ fi
 
 if [ $DO = "2" ]
 then
+if [ $NODECOUNT = "0" ] 
+then
+printf "\n${RED}You don't have any nodes installed.\n${NC}"
+exit
+fi
 printf "\n${RED}This will delete ALL telos Masternodes on this system if you have more than 1, are you sure? [y/n]\n${NC}"
 read CONFIRM
 if [ $CONFIRM = "y" ]
@@ -210,7 +217,6 @@ fi
 
 if [ $DO = "1" ]
 then
-NODECOUNT=$(find /root/.transcendence* -maxdepth 0 -type d | wc -l)
 if [ $NODECOUNT = "0" ] 
 then
   if [ -z $1 ]; then
