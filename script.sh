@@ -206,7 +206,7 @@ fi
 
 if [ $DO = "1" ]
 then
-if [ ! -d ~/.transcendence ] 
+if [ ! -d ~/.transcendence* ] 
 then
   if [ -z $1 ]; then
   printf "\nEnter masternode private key: "
