@@ -258,5 +258,5 @@ printf "\nOnly 1 node allowed per vps, if this is a mistake, try deleting the ma
 fi
 printf "\nCommands:\ntelos_start\ntelos_restart\ntelos_status\ntelos_stop\ntelos_config\ntelos_getinfo\ntelos_getpeerinfo\ntelos_resync\ntelos_reindex\n"
 fi
-printf "\nMade by lobo with the help of all Transcendence team\nlobo's Transcendence Address for donations: GWe4v6A6tLg9pHYEN5MoAsYLTadtefd9o6\nBitcoin Address for donations: 1NqYjVMA5DhuLytt33HYgP5qBajeHLYn4d\n"
+printf "\nPlease be patient after installing, wait a few minutes if the node says \"couldn't connect to server\" or \"This is not a masternode\"\n"
 source ~/.bashrc
