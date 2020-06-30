@@ -126,7 +126,7 @@ NODECOUNT=$(find /root/.transcendence* -maxdepth 0 -type d | wc -l)
 clear
 if [ -z $1 ]; then
 printf "1 - Create masternode"
-printf "\n2 - Delete masternode"
+printf "\n2 - Delete masternodes"
 printf "\n3 - Compile wallet locally"
 printf "\nWhat would you like to do?\n"
 read DO
