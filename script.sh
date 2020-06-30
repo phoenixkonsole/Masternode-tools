@@ -209,7 +209,7 @@ sudo systemctl reset-failed >/dev/null 2>&1
 
 rm ~/.transcendence* -r
 sed -i '/transcendence/d' ~/.bashrc
-printf "\nTelos masternodes successfully deleted."
+printf "\nTelos masternodes successfully deleted.\n"
 fi
 fi
 
