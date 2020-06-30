@@ -70,9 +70,9 @@ ExecStart=/usr/local/bin/transcendenced
 ExecStop=/usr/local/bin/transcendence-cli stop
 Restart=always
 PrivateTmp=true
-TimeoutStopSec=60s
-TimeoutStartSec=10s
-StartLimitInterval=120s
+TimeoutStopSec=300s
+TimeoutStartSec=300s
+StartLimitInterval=480s
 StartLimitBurst=5
 [Install]
 WantedBy=multi-user.target
