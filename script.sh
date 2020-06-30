@@ -187,19 +187,23 @@ fi
 
 if [ $DO = "2" ]
 then
-printf "\n${GREEN}Deleting Telos masternode${NC}. Please wait."
-## Removing service
-sudo systemctl stop transcendenced 
-sudo systemctl disable transcendenced > /dev/null 2>&1
-sudo rm /etc/systemd/system/transcendenced.service 
+printf "\n${RED}This will delete ALL telos Masternodes on this system if you have more than 1, are you sure? [y/n]${NC}"
+read CONFIRM
+if [ $CONFIRM = "y" ]
+then
+printf "\n${GREEN}Deleting Telos masternodes${NC}. Please wait."## Removing service
+sudo systemctl stop transcendence*
+sudo systemctl disable transcendence* > /dev/null 2>&1
+sudo rm /etc/systemd/system/transcendence*
 sudo systemctl daemon-reload >/dev/null 2>&1
 sudo systemctl reset-failed >/dev/null 2>&1
 
 ## Removing node files 
 
-rm ~/.transcendence -r
-sed -i '/telos/d' ~/.bashrc
-printf "\nTelos masternode successfully deleted."
+rm ~/.transcendence* -r
+sed -i '/transcendence/d' ~/.bashrc
+printf "\nTelos masternodes successfully deleted."
+fi
 fi
 
 ## Creating new nodes
