@@ -206,7 +206,8 @@ fi
 
 if [ $DO = "1" ]
 then
-if [ ! -d ~/.transcendence* ] 
+NODECOUNT=$(find /root/.transcendence* -maxdepth 0 -type d | wc -l)
+if [ $NODECOUNT = "0" ] 
 then
   if [ -z $1 ]; then
   printf "\nEnter masternode private key: "
