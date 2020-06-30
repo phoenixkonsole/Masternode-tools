@@ -258,10 +258,9 @@ EOF
   printf "\nYour ip is ${GREEN}$IP:8051${NC}\n"
 	configure_bashrc
 	configure_systemd
+printf "\n${GREEN}Please be patient after installing, wait a few minutes if the node says \"couldn't connect to server\" or \"This is not a masternode\"${NC}\n"
+printf "\n${GREEN}Run 'source ~/.bashrc' for your commands to work.${NC}\nCommands:\ntelos_start\ntelos_restart\ntelos_status\ntelos_stop\ntelos_config\ntelos_getinfo\ntelos_getpeerinfo\ntelos_resync\ntelos_reindex\n"
 else
 printf "\nOnly 1 node allowed per vps, if this is a mistake, try deleting the masternode with the script."
 fi
-printf "\n${GREEN}Run 'source ~/.bashrc' for your commands to work.${NC}\nCommands:\ntelos_start\ntelos_restart\ntelos_status\ntelos_stop\ntelos_config\ntelos_getinfo\ntelos_getpeerinfo\ntelos_resync\ntelos_reindex\n"
 fi
-printf "\n${GREEN}Please be patient after installing, wait a few minutes if the node says \"couldn't connect to server\" or \"This is not a masternode\"${NC}\n"
-source ~/.bashrc
