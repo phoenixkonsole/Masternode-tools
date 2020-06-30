@@ -117,7 +117,7 @@ sudo unzip Linux.zip -d /usr/local/bin
 sudo chmod +x /usr/local/bin/transcendence*
 rm Linux.zip
 touch $INFO_DIR/${version}
-printf "\n${GREEN}Wallet updated.${NC} ${RED}PLEASE RESTART YOUR NODES OR REBOOT SYSTEM WHEN POSSIBLE.${NC}"
+printf "\n${GREEN}Wallet updated.${NC} ${RED}Restart your nodes or reboot your system when possible.${NC}"
 fi
 fi
 
