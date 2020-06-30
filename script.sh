@@ -191,7 +191,7 @@ printf "\n${RED}This will delete ALL telos Masternodes on this system if you hav
 read CONFIRM
 if [ $CONFIRM = "y" ]
 then
-printf "\n${GREEN}Deleting Telos masternodes${NC}. Please wait."## Removing service
+printf "\n${GREEN}Deleting Telos masternodes${NC}. Please wait."
 sudo systemctl stop transcendence*
 sudo systemctl disable transcendence* > /dev/null 2>&1
 sudo rm /etc/systemd/system/transcendence*
