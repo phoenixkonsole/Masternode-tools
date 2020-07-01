@@ -138,7 +138,7 @@ fi
 if [ $DO = "help" ]
 then
 printf "\nUsage:"
-printf "\n./lobohub.sh Create/Delete PrivateKey(If creating)"
+printf "\n./script.sh Create/Delete PrivateKey(If creating)"
 fi
 
 ## Compiling wallet
