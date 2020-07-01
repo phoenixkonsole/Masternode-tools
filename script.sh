@@ -3,25 +3,23 @@ cd ~
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
-USER=`whoami`
 ## Setup
 
-if [ $USER = "root" ]
+if [ -z "$HOME" ] ## If home is not set for whatever reason
 then
-HOME=/root
+if [[ $EUID -ne 0 ]]
+then
+   HOME=/home/`whoami`
 else
-HOME=/home/$USER
+   HOME=/root
 fi
-INFO_DIR=$HOME/.local/share/telos
-if [ ! -d "$INFO_DIR" ]; then
-mkdir -p $INFO_DIR
 fi
 
 if [ ! -f "$INFO_DIR/dep" ]
 then
   printf "Installing ${GREEN}Transcendence dependencies${NC}. Please wait.\n"
-  sleep 2
-  if [ $USER = "root" ]
+  sleep 1
+  if [ $EUID -eq 0 ]
   then
   apt update
   apt install -y sudo
@@ -101,7 +99,6 @@ function startnode() {
 }
 
 ## Check for wallet update
-
 if [ -f "/usr/local/bin/transcendenced" ]
 then
 
