@@ -36,7 +36,7 @@ then
   if [ ! -f /var/swap.img ]
   then
   printf "\n${GREEN}Creating swap. This may take a while.${NC}\n"
-  sudo dd if=/dev/zero of=/var/swap.img bs=2048 count=1M
+  sudo fallocate -l 2G /var/swap.img
   sudo chmod 600 /var/swap.img
   sudo mkswap /var/swap.img 
   sudo swapon /var/swap.img 
