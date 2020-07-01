@@ -40,7 +40,7 @@ then
   sudo chmod 600 /var/swap.img
   sudo mkswap /var/swap.img 
   sudo swapon /var/swap.img 
-  sudo printf "\n/var/swap.img none swap sw 0 0" >> /etc/fstab
+  sudo su -c 'echo "/var/swap.img none swap sw 0 0" >> /etc/fstab'
   fi
   
   sudo ufw allow ssh/tcp
