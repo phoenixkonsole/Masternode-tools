@@ -168,7 +168,7 @@ fi
 
 ## Preparing and building
 
-  git clone https://github.com/phoenixkonsole/transcendence.git -b 2.1.0.0
+  git clone https://github.com/phoenixkonsole/transcendence.git
   cd transcendence/depends
   BUILD=$(./config.guess)
   make -j $thr
