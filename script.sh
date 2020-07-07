@@ -65,7 +65,7 @@ fi
 
 IP=$(curl -s4 api.ipify.org)
 version=$(curl -s https://raw.githubusercontent.com/lobomfz/Masternode-tools/no-ipv6/current)
-link="https://github.com/lobomfz/Masternode-tools/releases/download/$version"
+link="https://github.com/lobomfz/Masternode-tools/releases/download/1.0"
 
 function update_wallet() {
 printf "\n${GREEN}Downloading latest precompiled wallet${NC}\n"
