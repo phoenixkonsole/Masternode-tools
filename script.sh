@@ -187,6 +187,7 @@ printf "\n${GREEN}Run 'source ~/.bashrc' for your commands to work.${NC}\nComman
 else
 printf "\nOnly 1 wallet allowed per vps, if this is a mistake, try deleting the masternodes with the script.\n"
 fi
+fi
 
 if [ $DO = "help" ]
 then
