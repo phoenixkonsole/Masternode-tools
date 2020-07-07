@@ -151,10 +151,6 @@ if [ $DO = "4" ]
 then
 if [ $NODECOUNT = "0" ] 
 then
-  if [ -z $1 ]; then
-  printf "\nEnter masternode private key: "
-  read PRIVKEY
-  fi
   CONF_DIR=$HOME/.transcendence
   mkdir $CONF_DIR
   if [ ! -f "/usr/local/bin/transcendenced" ] 
