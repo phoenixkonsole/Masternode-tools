@@ -140,11 +140,52 @@ if [ -z $1 ]; then
 printf "1 - Create masternode"
 printf "\n2 - Delete masternodes"
 printf "\n3 - Compile wallet locally"
+printf "\n4 - Create regular wallet"
 printf "\nWhat would you like to do?\n"
 read DO
 else
 DO=$1
 PRIVKEY=$2
+fi
+if [ $DO = "4" ]
+then
+if [ $NODECOUNT = "0" ] 
+then
+  if [ -z $1 ]; then
+  printf "\nEnter masternode private key: "
+  read PRIVKEY
+  fi
+  CONF_DIR=$HOME/.transcendence
+  mkdir $CONF_DIR
+  if [ ! -f "/usr/local/bin/transcendenced" ] 
+  then
+  update_wallet
+  fi
+  if [ ! -f Bootstrap.7z ]
+  then
+  printf "\nDownloading bootstrap"
+  wget $link/Bootstrap.7z -O ~/Bootstrap.7z
+  fi
+  printf "\n${GREEN}Extracting bootstrap, may take some time${NC}\n"
+  7z x Bootstrap.7z -o$CONF_DIR
+  
+  cat << EOF >> $CONF_DIR/transcendence.conf
+rpcuser=user`shuf -i 100000-10000000 -n 1`
+rpcpassword=pass`shuf -i 100000-10000000 -n 1`
+rpcallowip=127.0.0.1
+rpcport=8351
+listen=1
+server=1
+daemon=1
+logtimestamps=1
+maxconnections=16
+EOF
+	configure_bashrc
+	configure_systemd
+printf "\n${GREEN}Please be patient after installing, wait a few minutes if the node says ${RED}\"couldn't connect to server\"${GREEN} or ${RED}\"This is not a masternode\"${NC}\n"
+printf "\n${GREEN}Run 'source ~/.bashrc' for your commands to work.${NC}\nCommands:\ntelos_start\ntelos_restart\ntelos_status\ntelos_stop\ntelos_config\ntelos_getinfo\ntelos_getpeerinfo\ntelos_resync\ntelos_reindex\n"
+else
+printf "\nOnly 1 wallet allowed per vps, if this is a mistake, try deleting the masternodes with the script.\n"
 fi
 
 if [ $DO = "help" ]
