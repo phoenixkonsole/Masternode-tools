@@ -4,6 +4,19 @@ RED='\033[0;31m'
 GREEN='\033[0;32m'
 NC='\033[0m'
 ## Setup
+source /etc/os-release
+if [ ! -z $UBUNTU_CODENAME ]
+then
+if [ $UBUNTU_CODENAME = "focal" ]
+then
+BINARY=Ubuntu20.zip
+elif [ $UBUNTU_CODENAME = "bionic" ]
+then
+BINARY=Ubuntu18.zip
+fi
+else
+BINARY=Linux.zip
+fi
 
 if [ -z "$HOME" ] ## If home is not set for whatever reason
 then
@@ -52,7 +65,16 @@ fi
 
 IP=$(curl -s4 api.ipify.org)
 version=$(curl -s https://raw.githubusercontent.com/lobomfz/Masternode-tools/no-ipv6/current)
-link="https://github.com/phoenixkonsole/transcendence/releases/download/$version"
+link="https://github.com/lobomfz/Masternode-tools/releases/download/$version"
+
+function update_wallet() {
+printf "\n${GREEN}Downloading latest precompiled wallet${NC}\n"
+wget $link/${BINARY}  -O ~/${BINARY}
+touch $INFO_DIR/${version}
+sudo unzip ${BINARY} -d /usr/local/bin 
+sudo chmod +x /usr/local/bin/transcendence*
+rm ${BINARY} 
+}
 
 function configure_systemd() {
   sudo su -c 'cat << EOF > /etc/systemd/system/transcendenced.service
@@ -106,14 +128,7 @@ if [ ! -f "$INFO_DIR/${version}" ]
 then
 
 printf "\n${GREEN}Please wait, updating wallet.${NC}"
-sleep 1
-
-wget $link/Linux.zip -O ~/Linux.zip 
-rm /usr/local/bin/transcendence*
-sudo unzip Linux.zip -d /usr/local/bin 
-sudo chmod +x /usr/local/bin/transcendence*
-rm Linux.zip
-touch $INFO_DIR/${version}
+update_wallet
 printf "\n${GREEN}Wallet updated.${NC} ${RED}Restart your nodes or reboot your system when possible.${NC}"
 fi
 fi
@@ -137,7 +152,6 @@ then
 printf "\nUsage:"
 printf "\n./script.sh Create/Delete PrivateKey(If creating)"
 fi
-
 ## Compiling wallet
 
 if [ $DO = "3" ]
@@ -222,15 +236,10 @@ then
   fi
   CONF_DIR=$HOME/.transcendence
   mkdir $CONF_DIR
-  if [ ! -f "/usr/local/bin/transcendenced" ]
+  if [ ! -f "/usr/local/bin/transcendenced" ] 
   then
-  printf "\n${GREEN}Downloading precompiled wallet${NC}\n"
-  wget $link/Linux.zip  -O ~/Linux.zip 
-  touch $INFO_DIR/${version}
-  sudo unzip Linux.zip -d /usr/local/bin 
-  sudo chmod +x /usr/local/bin/transcendence*
-  rm Linux.zip 
-fi
+  update_wallet
+  fi
   if [ ! -f Bootstrap.7z ]
   then
   printf "\nDownloading bootstrap"
@@ -249,11 +258,8 @@ server=1
 daemon=1
 logtimestamps=1
 maxconnections=16
-masternode=1
-dbcache=20
-maxorphantx=5
-maxmempool=100
 
+masternode=1
 externalip=$IP
 masternodeaddr=$IP:8051
 masternodeprivkey=$PRIVKEY
