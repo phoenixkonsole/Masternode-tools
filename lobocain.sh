@@ -499,7 +499,7 @@ echo "${ALIAS}_reindex"
 fi
 
 echo ""
-echo "Lobocain by GrumbyDEV blatantly stolen from lobo & xispita in the name of the Transcendence community "
+echo "Lobocain by GrumpyDEV blatantly stolen from lobo & xispita in the name of the Transcendence community "
 echo "lobo's Transcendence Address for donations: GWe4v6A6tLg9pHYEN5MoAsYLTadtefd9o6"
 echo "xispita's Transcendence Address for donations: GRDqyK7m9oTsXjUsmiPDStoAfuX1H7eSfh" 
 echo "GrumpyDEV's Milkpot ................. nah.. enjoy and buy at least for 30$ TELOS" 
