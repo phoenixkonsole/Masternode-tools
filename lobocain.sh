@@ -59,14 +59,14 @@ fi
 
 ## Constants
 
-IP4COUNT=$(find /root/.transcendence_* -maxdepth 0 -type d | wc -l)
-IP6COUNT=$(crontab -l -u root | wc -l)
-DELETED="$(cat /root/bin/deleted | wc -l)"
-ALIASES="$(find /root/.transcendence_* -maxdepth 0 -type d | cut -c22-)"
+IP4COUNT=$(find /root/.transcendence_* -maxdepth 0 -type d 2>/dev/null | wc -l)
+IP6COUNT=$(crontab -l -u root 2>/dev/null | wc -l)
+DELETED="$(cat /root/bin/deleted 2>/dev/null | wc -l)"
+ALIASES="$(find /root/.transcendence_* -maxdepth 0 -type d 2>/dev/null | cut -c22-)"
 face="$(lshw -C network | grep "logical name:" | sed -e 's/logical name:/logical name: /g' | awk '{print $3}' | head -n1)"
 IP4=$(curl -s4 api.ipify.org)
-version=$(curl https://raw.githubusercontent.com/phoenixkonsole/Masternode-tools/master/current)
-link=$(curl https://raw.githubusercontent.com/phoenixkonsole/Masternode-tools/master/download)
+version=$(curl -s https://raw.githubusercontent.com/phoenixkonsole/Masternode-tools/master/current)
+link=$(curl -s https://raw.githubusercontent.com/phoenixkonsole/Masternode-tools/master/download)
 PORT=8051
 RPCPORTT=8351
 gateway1=$(/sbin/route -A inet6 | grep -v ^fe80 | grep -v ^ff00 | grep -w "$face")
@@ -323,9 +323,9 @@ fi
 
 ## Downloading bootstrap
 
-if [ ! -f Bootstrap.zip ]
+if [ ! -f bootstrap.zip ]
 then
-wget https://github.com/ZenH2O/001/releases/download/Latest/block1330678.zip && wget https://github.com/ZenH2O/001/releases/download/Latest/block1330678.z01 && zip -s- block1330678.zip -O /root/bootstrap.zip
+wget https://github.com/ZenH2O/001/releases/download/Latest/block1358538.zip && wget https://github.com/ZenH2O/001/releases/download/Latest/block1358538.z01 && zip -s- block1358538.zip -O /root/bootstrap.zip
 fi
 
 ## Start of node creation
@@ -351,7 +351,7 @@ RPCPORT=$(($RPCPORTT+$COUNTER))
   CONF_DIR=/root/.transcendence_$ALIAS
   
   mkdir /root/.transcendence_$ALIAS
-  unzip Bootstrap.zip -d /root/.transcendence_$ALIAS >/dev/null 2>&1
+  unzip bootstrap.zip -d /root/.transcendence_$ALIAS >/dev/null 2>&1
   echo '#!/bin/bash' > ~/bin/transcendenced_$ALIAS.sh
   echo "transcendenced -daemon -conf=$CONF_DIR/transcendence.conf -datadir=$CONF_DIR "'$*' >> ~/bin/transcendenced_$ALIAS.sh
   echo '#!/bin/bash' > ~/bin/transcendence-cli_$ALIAS.sh
@@ -430,7 +430,7 @@ do
   /sbin/ip -6 addr add ${gateway}$COUNTER$MASK dev $face
   mkdir /root/.transcendence_$ALIAS
   
-  unzip Bootstrap.zip -d ~/.transcendence_$ALIAS >/dev/null 2>&1
+  unzip bootstrap.zip -d ~/.transcendence_$ALIAS >/dev/null 2>&1
   echo '#!/bin/bash' > ~/bin/transcendenced_$ALIAS.sh
   echo "transcendenced -daemon -conf=$CONF_DIR/transcendence.conf -datadir=$CONF_DIR "'$*' >> ~/bin/transcendenced_$ALIAS.sh
   echo '#!/bin/bash' > ~/bin/transcendence-cli_$ALIAS.sh
